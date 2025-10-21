@@ -1,0 +1,4 @@
+[
+  {"name": "Ronaldo", "license": "ABC123", "active": true},
+  {"name": "Maria", "license": "XYZ999", "active": false}
+]
