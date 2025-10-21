@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel de Licenças - MaxVip</title>
+  <style>
+    body { font-family: Arial; background: #f4f4f4; color: #333; padding: 20px; }
+    h2 { color: #1e88e5; }
+    table { border-collapse: collapse; width: 100%; background: white; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    tr:nth-child(even){ background: #f9f9f9; }
+    button { padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; }
+    .true { background-color: #4CAF50; color: white; }
+    .false { background-color: #f44336; color: white; }
+  </style>
+</head>
+<body>
+  <h2>Gerenciar Licenças - MaxVip</h2>
+  <input id="token" type="password" placeholder="Cole aqui seu token GitHub" style="width:50%;">
+  <button onclick="load()">Carregar lista</button>
+  <br><br>
+  <table id="tbl"></table>
+
+  <script>
+  const repo = "CarolinaBenedett/MaxVip";
+  const filePath = "clients.json";
+
+  async function load(){
+    const token = document.getElementById("token").value.trim();
+    if(!token){alert("Cole o token primeiro.");return;}
+    const res = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`);
+    const json = await res.json();
+    const data = JSON.parse(atob(json.content));
+    const tbl = document.getElementById("tbl");
+    tbl.innerHTML = "<tr><th>Nome</th><th>Licença</th><th>Ativo</th><th>Ação</th></tr>";
+    data.forEach((c,i)=>{
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${c.name}</td>
+        <td>${c.license}</td>
+        <td>${c.active}</td>
+        <td><button class="${c.active}" onclick="toggle(${i})">${c.active?'Desativar':'Ativar'}</button></td>`;
+      tbl.appendChild(tr);
+    });
+    window.clients = data;
+    window.sha = json.sha;
+    window.token = token;
+  }
+
+  async function toggle(i){
+    const c = window.clients[i];
+    c.active = !c.active;
+    const msg = `Atualizado ${c.name} para ${c.active}`;
+    const updated = btoa(JSON.stringify(window.clients, null, 2));
+    const body = {
+      message: msg,
+      content: updated,
+      sha: window.sha
+    };
+    const res = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`,{
+      method:"PUT",
+      headers:{
+        "Authorization":"Bearer "+window.token,
+        "Content-Type":"application/json"
+      },
+      body: JSON.stringify(body)
+    });
+    if(res.ok){
+      alert("Atualizado com sucesso!");
+      load();
+    }else{
+      alert("Erro ao atualizar!");
+    }
+  }
+  </script>
+</body>
+</html>
